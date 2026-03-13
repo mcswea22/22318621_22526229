@@ -2,18 +2,40 @@ package warehouse;
 
 import java.util.Map;
 
-//we want to print out in key=value format
+// We want to print in key=value format
 public final class Printer {
-    public synchronized void log(Map<String, Object> fields) {// synchronised so its only one thread at a time
+
+    public synchronized void log(Map<String, Object> fields) {
         StringBuilder s = new StringBuilder();
+        boolean first = true;
+
         for (var v : fields.entrySet()) {
-            boolean first = true;// we dont want space at the start so we set this flag
-            if (!first)
-                s.append(' ');// adding space in between
+            if (!first) {
+                s.append(' ');
+            }
             first = false;
-            s.append(v.getKey()).append("=").append(v.getValue());// key=val format
+
+            s.append(v.getKey()).append("=").append(v.getValue());
         }
+
         System.out.println(s.toString());
     }
 
+    public synchronized void logKv(Object... kv) {
+        if (kv.length % 2 != 0) {
+            throw new IllegalArgumentException("need key value pairs");
+        }
+
+        StringBuilder s = new StringBuilder();
+        // prints key value pairs in a string
+        for (int i = 0; i < kv.length; i += 2) {
+            if (i > 0) {
+                s.append(" ");
+            }
+
+            s.append(kv[i]).append("=").append(kv[i + 1]);
+        }
+
+        System.out.println(s.toString());
+    }
 }

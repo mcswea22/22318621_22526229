@@ -10,7 +10,7 @@ public class Delivery {
             counts.put(t, 0);// set initial delivery as empty
     }
 
-    public void IncomingDelivery(Type t, int n) {// adding deliveries to current stock
+    public void DeliveryManager(Type t, int n) {// adding deliveries to current stock
         counts.put(t, counts.get(t) + n);
     }
 
