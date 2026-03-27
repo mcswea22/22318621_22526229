@@ -7,6 +7,9 @@ public class TrolleyManager {// class that manages shared pool of trolleys
     private final Printer printer;
     private final Clock clock;
 
+    private long nextTicket = 0; // next ticket number to give out
+    private long serving = 0; // ticket number currently being served
+
     public TrolleyManager(int n, int capacity, Printer printer, Clock clock) {
         if (n < 1) {
             throw new IllegalArgumentException("n must be >= 1");// must be at least one trolley
@@ -26,28 +29,35 @@ public class TrolleyManager {// class that manages shared pool of trolleys
 
     // method to give worker a trolley, if none available then they wait
     public synchronized Trolley acquire(String tid) throws InterruptedException {
-        long start = clock.current();// says when worker started waiting to get a trollet
+        long start = clock.current(); // when this worker started waiting
+        long myTicket = nextTicket++; // give this worker a ticket
 
         while (true) {
-            for (int i = 0; i < trolleys.length; i++) {
-                if (!inUse[i]) {
-                    inUse[i] = true;
+            // only the worker whose turn it is can try to take a trolley
+            if (myTicket == serving) {
+                for (int i = 0; i < trolleys.length; i++) {
+                    if (!inUse[i]) {
+                        inUse[i] = true;
 
-                    long waited = clock.current() - start;// how long the worker waited for trolley
-                    Trolley trolley = trolleys[i];// assigning them the free one
+                        long waited = clock.current() - start;
+                        Trolley trolley = trolleys[i];
 
-                    printer.logKv(
-                            "tick", clock.current(),
-                            "tid", tid,
-                            "event", "acquire_trolley",
-                            "trolley_id", trolley.getTrolleyID(),
-                            "waited_ticks", waited);
+                        serving++; // let the next ticket holder have their turn
+                        notifyAll();
 
-                    return trolley;
+                        printer.logKv(
+                                "tick", clock.current(),
+                                "tid", tid,
+                                "event", "acquire_trolley",
+                                "trolley_id", trolley.getTrolleyID(),
+                                "waited_ticks", waited);
+
+                        return trolley;
+                    }
                 }
             }
 
-            wait();// if no trolleys were free wait
+            wait(); // wait until a trolley is released or it becomes this thread's turn
         }
     }
 

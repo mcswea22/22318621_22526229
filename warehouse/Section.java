@@ -3,37 +3,38 @@ package warehouse;
 public class Section {
     private int boxes;
     private final int capacity;
-    private boolean beingStocked = false;// tracks if stocker thread is currently adding boxes
-    private int waitingPickers = 0;// counts how many picker threads are waiting
+    private boolean beingStocked = false; // tracks if stocker thread is currently adding boxes
+    private int waitingPickers = 0; // counts how many picker threads are waiting
 
     public Section(int initial, int capacity) {
         this.boxes = initial;
         this.capacity = capacity;
     }
 
-    public synchronized void takeBox() throws InterruptedException {// only one thread at a time can use this method
-        waitingPickers++;// waiting to pick
-        try {
-            while (boxes == 0 || beingStocked) {
+    public synchronized void takeBox() throws InterruptedException {
+        while (boxes == 0 || beingStocked) {
+            waitingPickers++;
+            try {
                 wait();
+            } finally {
+                waitingPickers--;
             }
-            boxes--;// take a box
-            notifyAll();// notify waiting threads
-        } finally {
-            waitingPickers--;// one less waiting
         }
     }
 
     public synchronized void startStocking() throws InterruptedException {
-        while (beingStocked) {// only one stocker can stock a section at a time
+        while (beingStocked || // another stocker already using section
+                isFull() || // section is already full so doesnt need to be stocked
+                (waitingPickers > 0 && boxes > 0) // if pickers are waiting let them pick before stocking
+        ) {
             wait();
         }
-        beingStocked = true;// this section currently being stocked
+        beingStocked = true;// this section is currently being stocked
     }
 
     public synchronized void stopStocking() {
         beingStocked = false;
-        notifyAll();// let other threads know thar section is free
+        notifyAll();// let other threads know section is free
     }
 
     public synchronized void addBox() {
