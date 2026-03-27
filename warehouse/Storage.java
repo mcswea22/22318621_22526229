@@ -22,6 +22,18 @@ public class Storage {
         notifyAll();// wakes any threads waiting on this
     }
 
+    // wait until there are boxes in storage
+    public synchronized void waitForItems() throws InterruptedException {
+        while (totalBoxes() == 0) {
+            wait();
+        }
+    }
+
+    // checks if there are any boxes in storage 
+    public synchronized boolean hasItems() {
+        return totalBoxes() > 0;
+    }
+
     // wait until theres boxes and worker remove up to maxboxes randomly amd return
     // them as a delivery
     public synchronized Delivery takeRandom(int maxBoxes, Random r) throws InterruptedException {
