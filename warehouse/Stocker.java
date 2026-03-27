@@ -98,17 +98,9 @@ public class Stocker extends Thread {
 
                         // decide which section to go to next
                         Type target = chooseNextSection(remaining);
-
-                        // if no valid section, return items to storage
                         if (target == null) {
-                            if (!currentLocation.equals("staging")) {
-                                move(currentLocation, "staging", trolley.totalLoad(), trolley);
-                                currentLocation = "staging";
-                            }
-
-                            returnToStorage(remaining); // put items back
-                            syncTrolleyLoad(trolley, remaining); // trolley now empty
-                            break;
+                            clock.sleepTicks(5);
+                            continue;
                         }
 
                         int intended = remaining.getOrDefault(target, 0);
@@ -242,10 +234,12 @@ public class Stocker extends Thread {
 
         for (Type t : Type.values()) {
             int count = remaining.getOrDefault(t, 0);
-            if (count <= 0) continue;
+            if (count <= 0)
+                continue;
 
             Section s = warehouse.getSection(t);
-            if (s.isFull()) continue;
+            if (s.isFull())
+                continue;
 
             int score = 0;
 
@@ -288,21 +282,6 @@ public class Stocker extends Thread {
                 "to", to,
                 "load", carriedLoad,
                 "trolley_id", trolley.getTrolleyID());
-    }
-
-    // return unused boxes back to storage
-    private void returnToStorage(EnumMap<Type, Integer> remaining) {
-        Delivery leftover = new Delivery();
-
-        for (Type t : Type.values()) {
-            int count = remaining.getOrDefault(t, 0);
-            if (count > 0) {
-                leftover.DeliveryManager(t, count);
-                remaining.put(t, 0);
-            }
-        }
-
-        storage.add(leftover);
     }
 
     // update trolley contents to match remaining boxes
